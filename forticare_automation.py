@@ -190,18 +190,75 @@ def forticare_list_assets(forticare_url, forticare_bearer_token):
     return r.json()['assets']
 
 
-def assets_to_csv(assets_list):
-    csv = []
-    csv.append(['Serial Number', 'Description', 'Model', 'Decommissioned', 'Register Date'])
-    for asset in assests_list:
+def forticare_product_details(forticare_url, bearer_token, serial_number):
+    """Retrieve product details given a serial number 
+    
+    Parameters
+    ----------
+    forticare_url: str
+        The FortiCare URL.
+    forticare_bearer_token: str
+        The FortiCare Bearer token.
+    serial_number: str
+        The serial number of the asset.
+         
+    Returns
+    -------
+    product_details: json
+        A json containing all the available details about the given product.
+    """
+
+    header = {'Authorization': 'Bearer ' + forticare_bearer_token}
+
+    json_payload = {
+        "serialNumber": serial_number
+    }
+
+    logger.debug("Payload to post is:")
+    logger.debug(json.dumps(json_payload, indent=4))
+
+    url = forticare_url + "products/details"
+    r = requests.post(url=url, json=json_payload, headers=header)
+
+    logger.debug('FortiCare assets operation terminated with "%s"' % r.json()["message"])
+    logger.debug("JSON output is:")
+    logger.debug(json.dumps(r.json(), indent=4))
+
+    return r.json()
+
+
+def forticare_warranty_supports(serial_number):
+    product_details = forticare_product_details(forticare_url, forticare_bearer_token, serial_number)
+    warranty_supports = product_details['assetDetails']['warrantySupports']
+
+    if warranty_supports == None:
+        logger.error("No warranty supports found")
+
+    return warranty_supports
+
+def assets_to_csv(assets_list, file_name):
+    csv_content = []
+    csv_content.append(['Serial Number', 'Description', 'Model', 'Decommissioned', 'Register Date'])
+    for asset in assets_list:
         csv_asset = [asset['serialNumber'], asset['description'], asset['productModel'],
             asset['isDecommissioned'], asset['registrationDate']]
-        csv.append(csv_asset)
+        csv_content.append(csv_asset)
 
-    return csv
+    with open(file_name, 'w', newline='', encoding='utf-8') as f:
+        write = csv.writer(f, delimiter =';')
+        write.writerows(csv_content)
 
 
-if __name__ == "__main__":
+def warranty_supports_to_csv(warranty_supports, file_name):
+    csv_content = []
+    csv_content.append(['Support type', 'Support level', 'Expiration date'])
+    for ws in warranty_supports:
+        csv_ws = [ws['typeDesc'], ws['levelDesc'], ws['endDate']]
+        csv_content.append(csv_ws)
+    
+    with open(file_name, 'w', newline='', encoding='utf-8') as f:
+        write = csv.writer(f, delimiter=';')
+        write.writerows(csv_content)
 
     init_logging()
 
