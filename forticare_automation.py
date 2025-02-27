@@ -260,19 +260,13 @@ def warranty_supports_to_csv(warranty_supports, file_name):
         write = csv.writer(f, delimiter=';')
         write.writerows(csv_content)
 
+
+if __name__ == "__main__":
     init_logging()
 
     forticare_url, forticare_client_id, forticare_api_id, forticare_api_password, customerauth_url = init_forticare()
-
-
     forticare_bearer_token, forticare_refresh_token = forticare_login(customerauth_url, forticare_client_id, forticare_api_id, forticare_api_password)
 
-    assests_list = forticare_list_assets(forticare_url, forticare_bearer_token)
-
-    csv_assets = assets_to_csv(assests_list)
-
-    with open('assets.csv', 'w', newline='', encoding='utf-8') as f:
-        write = csv.writer(f, delimiter =';')
-        write.writerows(csv_assets)
-        
-
+    serial_number = "FGT60XXXXXXX"
+    warranty_supports = forticare_warranty_supports(serial_number)
+    warranty_supports_to_csv(warranty_supports, f"warranty_supports_{serial_number}.csv")
